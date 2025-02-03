@@ -53,11 +53,12 @@ Welcome to this repository. This repo includes the adaptations and installations
 - Refer to the following `Livox_Mid-360_User_Manual_EN` ([link](https://terra-1-g.djicdn.com/851d20f7b9f64838a34cd02351370894/Livox/Livox_Mid-360_User_Manual_EN.pdf)) 
 
 - Setup the `static IP address` of the host computer
+
 <p align="center">
     <img src="assets/setup-static-host-ip.png" width="500" height="90" />
-</p
+</p>
 
-    - Find the `ethernet_port_name` using `ifconfig` 
+- Find the `ethernet_port_name` using `ifconfig` 
 
     ```
     sudo ifconfig <ethernet_port_name> 192.168.1.50    
@@ -67,18 +68,18 @@ Welcome to this repository. This repo includes the adaptations and installations
 
 <p align="center">
     <img src="assets/livox-power-board-connection.jpg" width="500" height="300" />
-</p
+</p>
 
 ##### `STEP 4: Install the livox ROS driver`
 
 - Identify the `static IP address` for configuring the Livox Mid-360.
 <p align="center">
     <img src="assets/static-ip-configuration.png" width="800" height="100" />
-</p
+</p>
 
 <p align="center">
     <img src="assets/livox-serial-number.jpg" width="400" height="300" />
-</p
+</p>
 
 - Use the instructions for installing the `livox_ros_driver2` using this [link](https://github.com/Livox-SDK/livox_ros_driver2)
 
