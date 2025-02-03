@@ -118,3 +118,15 @@ Welcome to this repository. This repo includes the adaptations and installations
     ]
     ```
 - Build the `livox_ros_driver2` package.
+
+##### `STEP 5: Check the install of ROS2 pkg`
+
+- Once all the necessary tools are installed, run the following command to check the lidar point cloud using `Rviz` (depending on `ROS1` or `ROS2`)
+
+    ```
+    ros2 launch livox_ros_driver2 rviz_MID360_launch.py
+    ```
+
+<p align="center">
+    <img src="assets/rviz-point-cloud.png" width="400" height="300" />
+</p>
