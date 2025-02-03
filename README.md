@@ -62,17 +62,19 @@ Welcome to this repository. This repo includes the adaptations and installations
     ```
 
 - Connect the power cable of the lidar to power board (`12V` - red wire; `GND` - black wire)
-<div style="text-align: center;">
-  <img src="assets/livox-power-board-connection.jpg" alt="livox-power-board-connection" width="400">
-</div>
+
+<p align="center">
+    <img src="assets/livox-power-board-connection.jpg" width="500" height="300" />
+</p
 
 ##### `STEP 4: Install the livox ROS driver`
 
 - Identify the `static IP address` for configuring the Livox Mid-360.
 ![static-ip-configuration](assets/static-ip-configuration.png)
-<div style="text-align: center;">
-  <img src="assets/livox-serial-number.jpg" alt="livox-serial-number" width="400">
-</div>
+
+<p align="center">
+    <img src="assets/livox-serial-number.jpg" width="400" height="300" />
+</p
 
 - Use the instructions for installing the `livox_ros_driver2` using this [link](https://github.com/Livox-SDK/livox_ros_driver2)
 
