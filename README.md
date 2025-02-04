@@ -8,15 +8,15 @@ Welcome to this repository. This repo includes the adaptations and installations
 
 ##### `STEP 1: Install f1tenth driver stack`
 
-- Install the f1tenth driver stack from using the instructions given in the following [link](https://f1tenth.readthedocs.io/en/foxy_test/getting_started/firmware/drive_workspace.html#setting-up-the-driver-stack)
+- Install the f1tenth driver stack using the instructions given in the following [link](https://f1tenth.readthedocs.io/en/foxy_test/getting_started/firmware/drive_workspace.html#setting-up-the-driver-stack)
 
 - Please make the following changes before building the ROS package
 
     - Go to the following directory to access the file `bringup_launch.py`
 
-    - `Path:` \$HOME/ros2_ws/src/f1tenth_system/f1tenth_stack/launch/bringup_launch.py
+    - `Path:` your-f1tenth-ws/src/f1tenth_system/f1tenth_stack/launch/bringup_launch.py
 
-    - Comment out the following lines to make sure the nodes corresponding to the `Hokuyo` are `NOT` launched during bringup.
+    - Comment out the following lines to make sure the nodes corresponding to the `Hokuyo` are not launched during bringup.
         ```
         # urg_node = Node(
         #     package='urg_node',
@@ -30,17 +30,17 @@ Welcome to this repository. This repo includes the adaptations and installations
         ```
     - Now build the package using `colcon build`
 
-    - Test whether the `bringup_launch.py` is working and test the working using a controller
+    - Test whether the `bringup_launch.py` is working using a controller
 
 ##### `STEP 2: Install the Livox-SDK2`
 
 - Install the `Livox-SDK2` using the following [link](https://github.com/Livox-SDK/Livox-SDK2/blob/master/README.md). Please use the `linux` installation steps ([link](https://github.com/Livox-SDK/Livox-SDK2/blob/master/README.md#22-instruction-for-ubuntu-2004))
 
-- If you are having issue with the build process, try using less number of cpus using the following command
+- If you are having issues with the build process, try using less number of cpus using the following command
     ```
     cmake .. && make -jX, where X = desired number of CPUs
     ```
-- Follow the instruction given in this link to add the path for livox binaries from this [link](https://github.com/Livox-SDK/livox_ros_driver2?tab=readme-ov-file#62-launch-with-command-ros2-launch-livox_lidar_rviz_hap_launchpy-but-cannot-open-shared-object-file-liblivox_sdk_sharedso-)
+- Follow the instruction given in this link to add path for livox binaries from this [link](https://github.com/Livox-SDK/livox_ros_driver2?tab=readme-ov-file#62-launch-with-command-ros2-launch-livox_lidar_rviz_hap_launchpy-but-cannot-open-shared-object-file-liblivox_sdk_sharedso-)
 
     ```
     vim ~/.bashrc
@@ -64,6 +64,8 @@ Welcome to this repository. This repo includes the adaptations and installations
     sudo ifconfig <ethernet_port_name> 192.168.1.50    
     ```
 
+- Alternatively, you can do this by manually adding the ip address and netmask in `IPv4` from wired connection settings 
+
 - Connect the power cable of the lidar to power board (`12V` - red wire; `GND` - black wire)
 
 <p align="center">
@@ -81,9 +83,11 @@ Welcome to this repository. This repo includes the adaptations and installations
     <img src="assets/livox-serial-number.jpg" width="400" height="300" />
 </p>
 
-- Use the instructions for installing the `livox_ros_driver2` using this [link](https://github.com/Livox-SDK/livox_ros_driver2)
+- Follow these instructions for installing the `livox_ros_driver2` using this [link](https://github.com/Livox-SDK/livox_ros_driver2)
 
-- Before building the ROS2 driver, please change the `MID360_config.json` in the following location - `<your-livox-ws>/src/livox_ros_driver2/config/MID360_config.json`
+- Before building the ROS2 driver, please change the `MID360_config.json`
+
+- `Path:` your-livox-ws/src/livox_ros_driver2/config/MID360_config.json
 
     ```
     "host_net_info" : {
