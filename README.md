@@ -1,4 +1,4 @@
-# This file contains the instructions to use livox lidar on f1tenth-offroad
+# Instructions to use livox lidar on f1tenth-offroad
 
 Welcome to this repository. This repo includes the adaptations and installations to be done to use the Livox Mid-360 lidar along with f1tenth_system
 
