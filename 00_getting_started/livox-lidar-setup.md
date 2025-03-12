@@ -55,7 +55,7 @@ Welcome to this repository. This repo includes the adaptations and installations
 - Setup the `static IP address` of the host computer
 
 <p align="center">
-    <img src="assets/setup-static-host-ip.png" width="500" height="90" />
+    <img src="../assets/setup-static-host-ip.png" width="500" height="90" />
 </p>
 
 - Find the `ethernet_port_name` using `ifconfig` 
@@ -69,18 +69,18 @@ Welcome to this repository. This repo includes the adaptations and installations
 - Connect the power cable of the lidar to power board (`12V` - red wire; `GND` - black wire)
 
 <p align="center">
-    <img src="assets/livox-power-board-connection.jpg" width="500" height="300" />
+    <img src="../assets/livox-power-board-connection.jpg" width="500" height="300" />
 </p>
 
 ##### `STEP 4: Install the livox ROS driver`
 
 - Identify the `static IP address` for configuring the Livox Mid-360.
 <p align="center">
-    <img src="assets/static-ip-configuration.png" width="800" height="100" />
+    <img src="../assets/static-ip-configuration.png" width="800" height="100" />
 </p>
 
 <p align="center">
-    <img src="assets/livox-serial-number.jpg" width="400" height="300" />
+    <img src="../assets/livox-serial-number.jpg" width="400" height="300" />
 </p>
 
 - Follow these instructions for installing the `livox_ros_driver2` using this [link](https://github.com/Livox-SDK/livox_ros_driver2)
@@ -132,5 +132,5 @@ Welcome to this repository. This repo includes the adaptations and installations
     ```
 
 <p align="center">
-    <img src="assets/rviz-point-cloud.png" width="400" height="300" />
+    <img src="../assets/rviz-point-cloud.png" width="400" height="300" />
 </p>
