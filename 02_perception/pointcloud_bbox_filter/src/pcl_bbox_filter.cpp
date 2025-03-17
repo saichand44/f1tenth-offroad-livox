@@ -82,5 +82,11 @@ void PointCloudBboxFilter::poseCallback(const geometry_msgs::msg::PoseWithCovari
     cropPointCloud(output_cloud, min_point, max_point);
     
     sensor_msgs::msg::PointCloud2 output_cloud_msg;
+    pcl::toROSMsg(*output_cloud, output_cloud_msg);
+    
+    // set the frame id and other parameters
+    output_cloud_msg.header.frame_id = "map";
+    output_cloud_msg.header.stamp = this->get_clock()->now();
+
     cropped_cloud_publisher_->publish(output_cloud_msg);
 }
