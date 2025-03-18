@@ -1,6 +1,6 @@
 #include "pcl_bbox_filter.hpp"
 
-PointCloudBboxFilter::PointCloudBboxFilter(const rclcpp::NodeOptions &options) 
+PointCloudBboxFilter::PointCloudBboxFilter(const rclcpp::NodeOptions options) 
     : Node("bbox_filter_node")
 {
     // Declare parameters
@@ -22,6 +22,9 @@ PointCloudBboxFilter::PointCloudBboxFilter(const rclcpp::NodeOptions &options)
     this->get_parameter("map_path", map_path_);
 
     RCLCPP_INFO(get_logger(), "MAP RECEIVING...");
+    RCLCPP_INFO(get_logger(), "Map path: %s", map_path_.c_str());
+
+    input_cloud_ = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcl::io::loadPCDFile<pcl::PointXYZI>(map_path_, *input_cloud_);
     RCLCPP_INFO(get_logger(), "Map Size %ld", input_cloud_->size());
     RCLCPP_INFO(get_logger(), "MAP RECEIVING...[DONE]");
@@ -52,7 +55,7 @@ void PointCloudBboxFilter::cropPointCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr &
     crop_box_filter.filter(*output_cloud);
 }
 
-void PointCloudBboxFilter::poseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr &pose_msg)
+void PointCloudBboxFilter::poseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr pose_msg)
 {
     // Get parameters
     this->get_parameter("bbox_x_min", bbox_x_min_);

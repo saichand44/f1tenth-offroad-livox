@@ -20,7 +20,7 @@ foreach(PACKAGE
   geometry_msgs
   pcl_conversions
   PCL
-  tf2_eigen
+  # tf2_eigen
   Eigen3
   )
   find_package(${PACKAGE} REQUIRED)
@@ -34,7 +34,7 @@ ament_target_dependencies(bbox_filter
   sensor_msgs
   geometry_msgs
   pcl_conversions
-  tf2_eigen
+  # tf2_eigen
   Eigen3
 )
 
@@ -56,6 +56,12 @@ target_link_libraries(bbox_filter_node
 install(TARGETS
   bbox_filter_node
   DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+bbox_filter
+ARCHIVE DESTINATION lib
+LIBRARY DESTINATION lib
+RUNTIME DESTINATION bin)
 
 # Install Python modules
 
