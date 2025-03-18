@@ -8,5 +8,5 @@
       bbox_z_max: 1.0
       map_path: "src/lidar-localization-ros2/map/lab.pcd"
       point_cloud_frame: livox_frame
-      pose_topic: pcl_pose
+      pose_topic: /lidar_pose
       output_cloud_topic: pcd_filtered
