@@ -42,58 +42,6 @@ PointCloudBboxFilter::~PointCloudBboxFilter()
 {
 }
 
-// void PointCloudBboxFilter::cropPointCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr &output_cloud, 
-//     const Eigen::Vector4f &min_point, const Eigen::Vector4f &max_point)
-// {
-//     // Initialize the cropbox filter
-//     pcl::CropBox<pcl::PointXYZI> crop_box_filter(false);
-//     crop_box_filter.setInputCloud(input_cloud_);
-//     crop_box_filter.setMin (min_point);
-//     crop_box_filter.setMax (max_point);
-
-//     // Crop the point cloud
-//     crop_box_filter.filter(*output_cloud);
-// }
-
-// void PointCloudBboxFilter::poseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr pose_msg)
-// {
-//     // Get parameters
-//     this->get_parameter("bbox_x_min", bbox_x_min_);
-//     this->get_parameter("bbox_x_max", bbox_x_max_);
-//     this->get_parameter("bbox_y_min", bbox_y_min_);
-//     this->get_parameter("bbox_y_max", bbox_y_max_);
-//     this->get_parameter("bbox_z_min", bbox_z_min_);
-//     this->get_parameter("bbox_z_max", bbox_z_max_);
-    
-//     // Get the pose and define the min and max points for the bounding box
-//     float curr_global_pos_x = static_cast<float>(pose_msg->pose.pose.position.x);
-//     float curr_global_pos_y = static_cast<float>(pose_msg->pose.pose.position.y);
-//     float curr_global_pos_z = static_cast<float>(pose_msg->pose.pose.position.z);
-
-//     Eigen::Vector4f min_point{curr_global_pos_x + bbox_x_min_, 
-//                               curr_global_pos_y + bbox_y_min_, 
-//                               curr_global_pos_z + bbox_z_min_, 
-//                               1.0f};
-
-//     Eigen::Vector4f max_point{curr_global_pos_x + bbox_x_max_, 
-//                               curr_global_pos_y + bbox_y_max_, 
-//                               curr_global_pos_z + bbox_z_max_, 
-//                               1.0f};
-    
-//     // Crop the point cloud and publish it
-//     pcl::PointCloud<pcl::PointXYZI>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-//     cropPointCloud(output_cloud, min_point, max_point);
-    
-//     sensor_msgs::msg::PointCloud2 output_cloud_msg;
-//     pcl::toROSMsg(*output_cloud, output_cloud_msg);
-    
-//     // set the frame id and other parameters
-//     output_cloud_msg.header.frame_id = "map";
-//     output_cloud_msg.header.stamp = this->get_clock()->now();
-
-//     cropped_cloud_publisher_->publish(output_cloud_msg);
-// }
-
 void PointCloudBboxFilter::cropPointCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr &output_cloud, 
     const Eigen::Vector4f &min_point, const Eigen::Vector4f &max_point, 
     const Eigen::Vector3f &translation, const Eigen::Vector3f &euler)
@@ -137,8 +85,10 @@ void PointCloudBboxFilter::poseCallback(const geometry_msgs::msg::PoseWithCovari
     Eigen::Vector4f max_point{bbox_x_max_, bbox_y_max_, bbox_z_max_, 1.0f};
     
     Eigen::Vector3f translation{curr_global_pos_x, curr_global_pos_y, curr_global_pos_z};
-    Eigen::Quaternion<float> quaternion{curr_global_quat_w, curr_global_quat_x, curr_global_quat_y, 
-                                        curr_global_quat_z};
+    
+    // extract the inverse of the pose (map to curr_pose) i.e. conjugate
+    Eigen::Quaternion<float> quaternion{curr_global_quat_w, -curr_global_quat_x, -curr_global_quat_y, 
+                                        -curr_global_quat_z};
     Eigen::Vector3f euler = quaternion.toRotationMatrix().eulerAngles(0, 1, 2);
 
     // Crop the point cloud and publish it

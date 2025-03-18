@@ -37,11 +37,6 @@ private:
 
 // For functions
 private:
-    // void cropPointCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr &output_cloud, 
-    //     const Eigen::Vector4f &min_point, const Eigen::Vector4f &max_point);
-
-    // void poseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr pose_msg);
-
     void cropPointCloud(pcl::PointCloud<pcl::PointXYZI>::Ptr &output_cloud, 
         const Eigen::Vector4f &min_point, const Eigen::Vector4f &max_point,
         const Eigen::Vector3f &translation, const Eigen::Vector3f &euler);
