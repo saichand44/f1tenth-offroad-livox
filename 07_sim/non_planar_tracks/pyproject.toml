@@ -1,0 +1,14 @@
+[project]
+name = "non_planar_tracks"
+version = "0.0.0"
+description = "A simulator for different track surfaces"
+authors = [{ name="Sai Chand Gubbala", email="saichan8@seas.upenn.edu" }]
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]

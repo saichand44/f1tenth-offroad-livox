@@ -1,0 +1,58 @@
+{
+  "section1": {
+    "track_type": "OnCamberBankedTrack",
+    "track_width": 5.0,
+    "straight_length": 10.0,
+    "radius": 20.0,
+    "arc_angle_deg": 120.0,
+    "turn_direction": "RIGHT",
+    "segments_straight": 10,
+    "segments_arc": 20,
+    "bank_width": 5.0,
+    "bank_height": 10.0,
+    "num_width_divs": 30
+  },
+  "section2": {
+    "track_type": "OffCamberBankedTrack",
+    "track_width": 5.0,
+    "straight_length": 10.0,
+    "radius": 20.0,
+    "arc_angle_deg": 120.0,
+    "turn_direction": "LEFT",
+    "segments_straight": 10,
+    "segments_arc": 20,
+    "bank_width": 5.0,
+    "bank_height": 10.0,
+    "num_width_divs": 30
+  },
+  "section3": {
+    "track_type": "SingleBumpTrack",
+    "flat_width": 5.0,
+    "flat_length": 2.0,
+    "bump_height": 3.0,
+    "bump_width": 4.0,
+    "bump_length": 25.0,
+    "verts_x": 40,
+    "verts_per_meter": 10
+  },
+  "section4": {
+    "track_type": "TurningTrack",
+    "track_width": 5.0,
+    "straight_length": 5.0,
+    "radius": 5.0,
+    "arc_angle_deg": 120.0,
+    "turn_direction": "RIGHT",
+    "segments_straight": 10,
+    "segments_arc": 20
+  },
+  "section5": {
+    "track_type": "SingleBumpTrack",
+    "flat_width": 5.0,
+    "flat_length": 2.0,
+    "bump_height": 0.0,
+    "bump_width": 4.0,
+    "bump_length": 25.0,
+    "verts_x": 40,
+    "verts_per_meter": 10
+  }
+}
