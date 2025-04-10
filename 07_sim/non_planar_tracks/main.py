@@ -23,7 +23,7 @@ def main():
     clear_scene()
     
     # Load the track parameters JSON file.
-    with open("./track_config/track1.json", "r") as f:
+    with open("./track_config/track2.json", "r") as f:
         params = json.load(f)
     
     # Lookup dictionary mapping JSON keys to track classes.

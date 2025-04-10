@@ -1,0 +1,12 @@
+{
+  "section1": {
+    "track_type": "SingleBumpTrack",
+    "flat_width": 5.0,
+    "flat_length": 2.0,
+    "bump_height": 3.0,
+    "bump_width": 4.0,
+    "bump_length": 25.0,
+    "verts_x": 40,
+    "verts_per_meter": 10
+  }
+}
