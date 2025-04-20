@@ -21,15 +21,15 @@ simulation_app = app_launcher.app
 import torch
 
 import isaaclab.sim as sim_utils
-from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sim import SimulationContext
 from isaaclab.utils import configclass
 from isaaclab.sim.converters import MeshConverter
 
-from roboracer_assets.leatherback import ROBORACER_LEATHERBACK_CFG
 from roboracer_assets.non_planar_terrain import NON_PLANAR_TERRAIN_CFG
+from roboracer_assets.mushr import MUSHR_CFG
 
 @configclass
 class NonPlanarSceneCfg(InteractiveSceneCfg):
@@ -48,7 +48,7 @@ class NonPlanarSceneCfg(InteractiveSceneCfg):
     # Non-Planar track
     MeshConverter(NON_PLANAR_TERRAIN_CFG)
     terrain = TerrainImporterCfg(
-        collision_group = -1,
+        collision_group = 0,
         prim_path="/World/NonPlanarSurface",
         terrain_type = "usd",
         usd_path=NON_PLANAR_TERRAIN_CFG.usd_dir + NON_PLANAR_TERRAIN_CFG.usd_file_name + ".usd",
@@ -58,11 +58,12 @@ class NonPlanarSceneCfg(InteractiveSceneCfg):
             static_friction=1.0,
             dynamic_friction=1.0,
         ),
-        debug_vis=False
+        debug_vis=True
     )
 
     # Articulation
-    robot: ArticulationCfg = ROBORACER_LEATHERBACK_CFG.replace(prim_path="{ENV_REGEX_NS}/Vehicle")
+    # robot: ArticulationCfg = ROBORACER_LEATHERBACK_CFG.replace(prim_path="{ENV_REGEX_NS}/Vehicle")
+    robot: ArticulationCfg = MUSHR_CFG.replace(prim_path="{ENV_REGEX_NS}/Vehicle")
 
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     """
@@ -71,6 +72,10 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     # Extract scene entities
     # note: we only do this here for readability.
     robot = scene["robot"]
+    
+    throttle_ids = robot.find_joints(".*_throttle")[0]
+    steer_ids    = robot.find_joints(".*_steer")[0]
+    throttle_scale, steer_scale = 3.0, 0.488
 
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
@@ -90,16 +95,31 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             robot.write_root_pose_to_sim(root_state[:, :7])
             robot.write_root_velocity_to_sim(root_state[:, 7:])
 
-            # -- joint state
-            joint_pos, joint_vel = robot.data.default_joint_pos.clone(), robot.data.default_joint_vel.clone()
-            robot.write_joint_state_to_sim(joint_pos, joint_vel)
+            # # -- joint state
+            # joint_pos, joint_vel = robot.data.default_joint_pos.clone(), robot.data.default_joint_vel.clone()
+            # robot.write_joint_state_to_sim(joint_pos, joint_vel)
 
+            # 1) Throttle: spin all throttle joints at full forward
+            tgt_vel = torch.full((1, len(throttle_ids)),
+                                 throttle_scale,
+                                 dtype=torch.float32,
+                                 device=robot.device)
+            robot.set_joint_velocity_target(tgt_vel,
+                                            joint_ids=throttle_ids)
+
+            # 2) Steering: hold all steer joints at zero angle
+            tgt_pos = torch.zeros((1, len(steer_ids)),
+                                  dtype=torch.float32,
+                                  device=robot.device)
+            robot.set_joint_position_target(tgt_pos,
+                                            joint_ids=steer_ids)
+            
             # clear internal buffers
             scene.reset()
             print("[INFO]: Resetting scene state...")
 
-        # Apply action to robot  #TODO: experiment with random action to joint pose and joint vel
-        robot.set_joint_position_target(robot.data.default_joint_pos)
+        # # Apply action to robot  #TODO: experiment with random action to joint pose and joint vel
+        # robot.set_joint_position_target(robot.data.default_joint_pos)
 
         # Write data to sim
         scene.write_data_to_sim()

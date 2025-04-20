@@ -8,7 +8,7 @@ from . import ROBORACER_ASSETS_DATA_DIR
 # Overall configuration for mesh converter
 non_planar_terrain_path = f"{ROBORACER_ASSETS_DATA_DIR}/terrains/bump_track.obj"
 usd_filename = non_planar_terrain_path.split("/")[-1].split(".")[0]
-dest_usd_path = f"{ROBORACER_ASSETS_DATA_DIR}/terrains/"
+dest_usd_path = f"{ROBORACER_ASSETS_DATA_DIR}/terrains/{usd_filename}/"
 
 NON_PLANAR_TERRAIN_CFG = MeshConverterCfg(
     mass_props=None,
@@ -19,5 +19,8 @@ NON_PLANAR_TERRAIN_CFG = MeshConverterCfg(
     usd_dir=dest_usd_path,
     usd_file_name=usd_filename,
     make_instanceable=True,
-    collision_approximation="convexDecomposition",
+    collision_approximation="meshSimplification",
+    translation=(0.0, 0.0, 0.0),
+    rotation=(0.5, 0.5, -0.5, -0.5),
+    scale=(1.0, 1.0, 1.0),
 )
