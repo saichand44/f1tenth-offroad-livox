@@ -5,7 +5,8 @@ from . import ROBORACER_ASSETS_DATA_DIR
 from .hound import HOUND_ACTUATOR_CFG, HOUND_SUS_ACTUATOR_CFG
 
 _ZERO_INIT_STATES = ArticulationCfg.InitialStateCfg(
-    pos=(0.0, 0.8, 0.4),
+    # pos=(14.0, 0.0, 3.1),
+    pos=(0.0, 0.0, 0.0),
     joint_pos={
         'back_left_wheel_throttle' : 0.0,
         'back_right_wheel_throttle' : 0.0,
@@ -17,6 +18,7 @@ _ZERO_INIT_STATES = ArticulationCfg.InitialStateCfg(
 )
 
 MUSHR_CFG = ArticulationCfg(
+    prim_path="/World/envs/env_.*/Vehicle",
     spawn=sim_utils.UsdFileCfg(
         usd_path=f"{ROBORACER_ASSETS_DATA_DIR}/vehicles/mushr_nano.usd",
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
