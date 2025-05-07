@@ -10,32 +10,62 @@ HOUND_ACTUATOR_CFG = {
         damping=10.,
         friction=0.,
     ),
+    # "throttle_joints": DCMotorCfg(
+    #     joint_names_expr=[".*throttle"],
+    #     saturation_effort=1.05,
+    #     effort_limit=0.25,
+    #     velocity_limit=450.,
+    #     stiffness=0,
+    #     damping=1000.,
+    #     friction=0.0,
+    # ),
     "throttle_joints": DCMotorCfg(
         joint_names_expr=[".*throttle"],
         saturation_effort=1.05,
-        effort_limit=0.25,
+        effort_limit=0.8,
         velocity_limit=450.,
         stiffness=0,
-        damping=1000.,
+        damping=0.1,
         friction=0.0,
     ),
+    # "throttle_joints": DCMotorCfg(
+    #     joint_names_expr=[".*throttle"],
+    #     saturation_effort=1.05,
+    #     # https://github.com/isaac-sim/IsaacLab/issues/2103
+    #     effort_limit=0.8,
+    #     velocity_limit=450.,
+    #     effort_limit_sim=0.8,
+    #     velocity_limit_sim=450.,
+    #     # stiffness={"front_left_wheel_throttle": 1e8,
+    #     #            "front_right_wheel_throttle": 1e8,
+    #     #            "back_left_wheel_throttle": 1e8,
+    #     #            "back_right_wheel_throttle": 1e8},
+    #     # damping={"front_left_wheel_throttle": 1e8,
+    #     #            "front_right_wheel_throttle": 1e8,
+    #     #            "back_left_wheel_throttle": 1e8,
+    #     #            "back_right_wheel_throttle": 1e8},
+    #     stiffness=0,
+    #     damping=1000.,
+    #     friction=0.0,
+    # ),
 }
 
 ## HOUND Configuration with suspension
 HOUND_SUS_ACTUATOR_CFG = {
     "steering_joints": HOUND_ACTUATOR_CFG["steering_joints"],
-    "throttle_joints": HOUND_ACTUATOR_CFG["throttle_joints"].replace(
-        joint_names_expr=["back_.*throttle"],
-        effort_limit=0.5, # More torque for two wheel drive
-    ),
-    "passive_joints": ImplicitActuatorCfg(
-        joint_names_expr=["front_.*throttle"],
-        effort_limit=None,
-        velocity_limit=None,
-        stiffness=0.0,
-        damping=0.0,
-        friction=0.0,
-    ),
+    # "throttle_joints": HOUND_ACTUATOR_CFG["throttle_joints"].replace(
+    #     joint_names_expr=["back_.*throttle"],
+    #     effort_limit=0.5, # More torque for two wheel drive
+    # ),
+    # "passive_joints": ImplicitActuatorCfg(
+    #     joint_names_expr=["front_.*throttle"],
+    #     effort_limit=None,
+    #     velocity_limit=None,
+    #     stiffness=0.0,
+    #     damping=0.0,
+    #     friction=0.0,
+    # ),
+    "throttle_joints": HOUND_ACTUATOR_CFG["throttle_joints"],
     "suspension": ImplicitActuatorCfg(
         joint_names_expr=[".*_suspension"],
         effort_limit=None, # Passive joint
