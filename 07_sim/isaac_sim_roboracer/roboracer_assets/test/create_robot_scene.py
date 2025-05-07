@@ -21,20 +21,15 @@ simulation_app = app_launcher.app
 import torch
 import numpy as np
 from scipy.spatial.transform import Rotation
-import trimesh
 
 import isaaclab.sim as sim_utils
-from isaaclab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
-from isaaclab.sensors import ImuCfg
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
-from isaaclab.terrains import TerrainImporterCfg, TerrainGeneratorCfg, SubTerrainBaseCfg
-from isaaclab.terrains.trimesh.mesh_terrains_cfg import MeshPlaneTerrainCfg
 from isaaclab.sim import SimulationContext
 from isaaclab.utils import configclass
-from isaaclab.sim.converters import MeshConverter
 
-from roboracer_assets.non_planar_terrain import NON_PLANAR_TERRAIN_CFG
 from roboracer_assets.mushr import MUSHR_CFG
+from roboracer_assets.utils import Data
 
 # Nominal, min. max velocities and steering for each robot
 MIN_VEL, MAX_VEL = 2.0, 10.0 
@@ -44,14 +39,13 @@ MIN_STEER, MAX_STEER = -0.8, 0.8 # radians
 # GROUND_PLANE_ANGLE = -20.0 # degrees
 GROUND_PLANE_ANGLE = -20.0 # degrees
 
-def get_gravity_vec(angle_in_deg):
+def get_gravity_vec(angle_in_deg, g_original):
     """
     Compute the new gravity vector that corresponds to the rotation of ground plane
     by "angle" in deg in positive Y axis
     """
     angle_in_rad = np.deg2rad(angle_in_deg)
     print(f"angle_in_rad: {angle_in_rad}")
-    g_original = np.array([0.0, 0.0, -9.81]).reshape(3, 1)
     Ry = np.array([[np.cos(angle_in_rad), 0, np.sin(angle_in_rad)],
                    [0, 1, 0],
                    [-np.sin(angle_in_rad), 0, np.cos(angle_in_rad)]])
@@ -60,47 +54,11 @@ def get_gravity_vec(angle_in_deg):
     g_transform = Ry.T @ g_original
     g_transform = g_transform.flatten()
 
-    return (float(g_transform[0]), float(g_transform[1]), float(g_transform[2]))
+    return (float(g_transform[0]), float(g_transform[1]), float(g_transform[2])), Ry.T
 
-G_TRANSFORM = get_gravity_vec(GROUND_PLANE_ANGLE)
+G_ORIGINAL = np.array([0.0, 0.0, -9.81]).reshape(3, 1)
+G_TRANSFORM, G_R_P = get_gravity_vec(GROUND_PLANE_ANGLE, G_ORIGINAL)
 print(f"G_TRANSFORM:\n {G_TRANSFORM}")
-
-# def _build_sloped_plane(_: float, cfg: SubTerrainBaseCfg):
-#     """Returns a 45-deg tilted rectangular patch as a Trimesh object."""
-#     cfg.size = (100.0, 100.0)
-#     width, length = cfg.size
-#     thickness = 0.05                        # keep it thin but non-zero
-
-#     # Build a thin box so physics engines register collisions robustly
-#     mesh = trimesh.creation.box(extents=(width, length, thickness))
-
-#     # Rotate +45 deg about the world-y axis (pitch-up)
-#     rot_T = trimesh.transformations.rotation_matrix(
-#         np.deg2rad(0.0),              # angle
-#         direction=[1.0, 0.0, 0.0],     # rotate about +x to tilt in +z
-#         point=(0.0, 0.0, 0.0),
-#     )
-#     mesh.apply_transform(rot_T)
-
-#     # Bring the lowest edge to z = 0 so the terrain “rests” on the ground
-#     # mesh.apply_translation([0.0, 0.0, -mesh.bounds[0, 2]])
-
-#     origin = np.zeros(3)               # (x,y,z) origin in stage coordinates
-#     return [mesh], origin
-
-# @configclass
-# class SlopedPlaneCfg(SubTerrainBaseCfg):
-#     """Single sub-terrain: a 45-deg flat ramp."""
-#     function = staticmethod(_build_sloped_plane)
-#     proportion: float = 1.0                    # only one terrain, probability = 1
-
-# gen_cfg = TerrainGeneratorCfg(
-#     seed=42,                       # deterministic output
-#     size=(100.0, 100.0),             # forwarded to every sub-terrain cfg
-#     num_rows=1,
-#     num_cols=1,
-#     sub_terrains={"slope45": SlopedPlaneCfg()},
-# )
 
 @configclass
 class NonPlanarSceneCfg(InteractiveSceneCfg):
@@ -126,40 +84,8 @@ class NonPlanarSceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.DomeLightCfg(intensity=3000.0, color=(0.75, 0.75, 0.75))
     )
 
-    # Non-Planar track
-    # MeshConverter(NON_PLANAR_TERRAIN_CFG)
-    # terrain = TerrainImporterCfg(
-    #     prim_path="/World/NonPlanarSurface",
-    #     terrain_type = "usd",
-    #     usd_path=NON_PLANAR_TERRAIN_CFG.usd_dir + NON_PLANAR_TERRAIN_CFG.usd_file_name + ".usd",
-
-    #     # This parameter is used only when the terrain_type is “generator” or “plane”.
-    #     physics_material=sim_utils.RigidBodyMaterialCfg(
-    #         friction_combine_mode="average",
-    #         restitution_combine_mode="average",
-    #         static_friction=0.0,
-    #         dynamic_friction=0.0,
-    #     ),
-    #     debug_vis=True
-    # )
-
-    # # Non-Planar track
-    # terrain_importer_cfg = TerrainImporterCfg(
-    #     prim_path="/World/NonPlanarSurface",
-    #     max_init_terrain_level=None,
-    #     terrain_type="generator",
-    #     terrain_generator=gen_cfg,
-    #     debug_vis=True,
-    # )
-
     # Articulation
     robot: ArticulationCfg = MUSHR_CFG.replace(prim_path="{ENV_REGEX_NS}/Vehicle")
-
-    # # IMU
-    # imu: ImuCfg = ImuCfg(
-    #     prim_path="{ENV_REGEX_NS}/Vehicle/base_link",
-    #     debug_vis=True,
-    # )
 
 # TODO: Need appropriate target vel to rpm conversion
 def generate_target_velocity(min_vel, max_vel, num_envs, num_joints):
@@ -219,11 +145,7 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     Runs the simulation loop
     """
     # Extract scene entities
-    # note: we only do this here for readability.
     robot = scene["robot"]
-    # print(robot.joint_names)  # NOTE: Use this to find out what joint pos, vel is reported by scene.get_state() 
-    # imu = scene["imu"]
-    # print(f"scene.get_state: \n{scene.get_state()}")
     throttle_ids = robot.find_joints(".*_throttle")[0]
     steer_ids    = robot.find_joints(".*_steer")[0]
 
@@ -231,10 +153,33 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     sim_dt = sim.get_physics_dt()
     count = 0
 
+    # initialize the data to record
+    data = Data('timestamps',   # simulation timestamp
+                'ground_plane_inclination', # gound plane inclination in deg
+                'g_original',   # gravity vector in ground inertial frame   
+                'g_transform',  # gravity vector in incline inertial frame
+                'g_R_p',    # rotation matrix from ground inertial to incline inertial
+                'target_velocity',    # target velocity to vehicle TODO: current input is rpm, need to change to car speed
+                'target_steering',    # targte steering input to vehicle
+                'root_pose',    # pose of the vehicle (position and quaternion orientation in (w, x, y, z))
+                'root_velocity',    # pose of the vehicle (linear velocity (x, y, z) and angular velocity (x, y, z))
+                'joint_velocity',   # joint velocities of implicit actuators
+                'root_acceleration',    # linear acc of the vehicle (x, y, z)
+                'joint_names',  # joint names of implicit actuators
+                'body_names',  # body names of articulations
+                )
+
+    data.ground_plane_inclination.append(GROUND_PLANE_ANGLE)
+    data.g_original.append(G_ORIGINAL)
+    data.g_transform.append(G_TRANSFORM)
+    data.g_R_p.append(G_R_P)
+    data.body_names.append(robot.data.body_names)
+    data.joint_names.append(robot.joint_names)
+
     # Simulation loop
     while simulation_app.is_running():
         # Reset    
-        if count % 5000 == 0:
+        if count % 2500 == 0:
             # reset counter
             count = 0
 
@@ -255,16 +200,18 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
             # control inputs
             # 1) Throttle: spin all throttle joints at full forward
-            target_velocities = generate_target_velocity(MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids))
-            target_velocities = target_velocities.to(sim.device)
-            print(f"target_velocities:\n{target_velocities}")
-            robot.set_joint_velocity_target(target_velocities, joint_ids=throttle_ids)
+            target_velocity = generate_target_velocity(MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids))
+            target_velocity = target_velocity.to(sim.device)
+            print(f"target_velocity:\n{target_velocity}")
+            data.target_velocity.append(target_velocity)
+            robot.set_joint_velocity_target(target_velocity, joint_ids=throttle_ids)
 
             # 2) Steering: Apply steering
-            target_steerings = generate_target_steering(MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids))
-            target_steerings = target_steerings.to(sim.device)
-            print(f"target_steerings:\n{target_steerings}")
-            robot.set_joint_position_target(target_steerings, joint_ids=steer_ids)
+            target_steering = generate_target_steering(MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids))
+            target_steering = target_steering.to(sim.device)
+            print(f"target_steering:\n{target_steering}")
+            data.target_steering.append(target_steering)
+            robot.set_joint_position_target(target_steering, joint_ids=steer_ids)
             
             # clear internal buffers
             scene.reset()
@@ -282,11 +229,16 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         # Update buffers
         scene.update(sim_dt)
 
-        if count % 1 == 0:
-            # print(f"scene.get_state: \n{scene.get_state()}")
-            # print(f"robot.body_names: \n{robot.data.body_names}")
+        if count % 250 == 0:
+            print(f"scene.get_state: \n{scene.get_state()}")
+            print(f"scene.get_state -- root_pose: \n{scene.get_state()['articulation']['robot']['root_pose']}")
+            print(f"scene.get_state -- root_velocity: \n{scene.get_state()['articulation']['robot']['root_velocity']}")
+            print(f"scene.get_state -- joint_velocity: \n{scene.get_state()['articulation']['robot']['joint_velocity']}")
+
+            print(f"robot.joint_names: \n {robot.joint_names}")  # NOTE: Use this to find out what joint pos, vel is reported by scene.get_state() 
+            print(f"robot.body_names: \n{robot.data.body_names}")
             print(f"robot.body_lin_acc_w: \n{robot.data.body_lin_acc_w}")
-            # print(f"imu.data: \n{imu.data}")
+            print(f"sim.current_time: \n {sim.current_time}")
 
 def main():
     """
