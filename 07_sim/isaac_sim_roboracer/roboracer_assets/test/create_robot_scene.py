@@ -45,12 +45,12 @@ def get_gravity_vec(angle_in_deg, g_original):
     by "angle" in deg in positive Y axis
     """
     angle_in_rad = np.deg2rad(angle_in_deg)
-    print(f"angle_in_rad: {angle_in_rad}")
+    # print(f"angle_in_rad: {angle_in_rad}")
     Ry = np.array([[np.cos(angle_in_rad), 0, np.sin(angle_in_rad)],
                    [0, 1, 0],
                    [-np.sin(angle_in_rad), 0, np.cos(angle_in_rad)]])
-    print(f"g_original:{g_original}")
-    print(f"Ry.T:{Ry.T}")
+    # print(f"g_original:{g_original}")
+    # print(f"Ry.T:{Ry.T}")
     g_transform = Ry.T @ g_original
     g_transform = g_transform.flatten()
 
@@ -58,7 +58,8 @@ def get_gravity_vec(angle_in_deg, g_original):
 
 G_ORIGINAL = np.array([0.0, 0.0, -9.81]).reshape(3, 1)
 G_TRANSFORM, G_R_P = get_gravity_vec(GROUND_PLANE_ANGLE, G_ORIGINAL)
-print(f"G_TRANSFORM:\n {G_TRANSFORM}")
+# print(f"G_TRANSFORM:\n {G_TRANSFORM}")
+
 
 @configclass
 class NonPlanarSceneCfg(InteractiveSceneCfg):
@@ -140,6 +141,7 @@ def initial_robot_orientation(num_envs):
 
     return torch.stack((w, x, y, z), dim=1)
 
+
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     """
     Runs the simulation loop
@@ -192,7 +194,7 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             random_orientations = initial_robot_orientation(scene.num_envs)
             random_orientations = random_orientations.to(sim.device)
             root_state[:, 3:7] = random_orientations
-            print(f"random_orientations:\n {random_orientations}")
+            # print(f"random_orientations:\n {random_orientations}")
             
             # assign default pose and velocities to the robot
             robot.write_root_pose_to_sim(root_state[:, :7])
@@ -202,14 +204,14 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             # 1) Throttle: spin all throttle joints at full forward
             target_velocity = generate_target_velocity(MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids))
             target_velocity = target_velocity.to(sim.device)
-            print(f"target_velocity:\n{target_velocity}")
+            # print(f"target_velocity:\n{target_velocity}")
             data.target_velocity.append(target_velocity)
             robot.set_joint_velocity_target(target_velocity, joint_ids=throttle_ids)
 
             # 2) Steering: Apply steering
             target_steering = generate_target_steering(MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids))
             target_steering = target_steering.to(sim.device)
-            print(f"target_steering:\n{target_steering}")
+            # print(f"target_steering:\n{target_steering}")
             data.target_steering.append(target_steering)
             robot.set_joint_position_target(target_steering, joint_ids=steer_ids)
             
@@ -229,17 +231,27 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         # Update buffers
         scene.update(sim_dt)
 
-        if count % 250 == 0:
-            print(f"scene.get_state: \n{scene.get_state()}")
-            print(f"scene.get_state -- root_pose: \n{scene.get_state()['articulation']['robot']['root_pose']}")
-            print(f"scene.get_state -- root_velocity: \n{scene.get_state()['articulation']['robot']['root_velocity']}")
-            print(f"scene.get_state -- joint_velocity: \n{scene.get_state()['articulation']['robot']['joint_velocity']}")
+        # print(f"scene.get_state: \n{scene.get_state()}")
+        # print(f"scene.get_state -- root_pose: \n{scene.get_state()['articulation']['robot']['root_pose']}")
+        # print(f"scene.get_state -- root_velocity: \n{scene.get_state()['articulation']['robot']['root_velocity']}")
+        # print(f"scene.get_state -- joint_velocity: \n{scene.get_state()['articulation']['robot']['joint_velocity']}")
 
-            print(f"robot.joint_names: \n {robot.joint_names}")  # NOTE: Use this to find out what joint pos, vel is reported by scene.get_state() 
-            print(f"robot.body_names: \n{robot.data.body_names}")
-            print(f"robot.body_lin_acc_w: \n{robot.data.body_lin_acc_w}")
-            print(f"sim.current_time: \n {sim.current_time}")
+        data.root_pose.append(scene.get_state()['articulation']['robot']['root_pose'])
+        data.root_velocity.append(scene.get_state()['articulation']['robot']['root_velocity'])
+        data.joint_velocity.append(scene.get_state()['articulation']['robot']['joint_velocity'])
 
+        # print(f"robot.joint_names: \n {robot.joint_names}")  # NOTE: Use this to find out what joint pos, vel is reported by scene.get_state() 
+        # print(f"robot.body_names: \n{robot.data.body_names}")
+        # print(f"robot.body_lin_acc_w: \n{robot.data.body_lin_acc_w}")
+        # print(f"sim.current_time: \n {sim.current_time}")
+        
+        data.timestamps.append(sim.current_time)
+        data.root_acceleration.append(robot.data.body_lin_acc_w)
+        break
+
+    # save the data
+    data.unpack_and_save(num_robots = args_cli.num_envs)
+    
 def main():
     """
     Main function.
@@ -267,8 +279,11 @@ def main():
     # Run the simulator
     run_simulator(sim, scene)
 
+    print("[INFO]: Closing the simulator...")
+
 if __name__ == "__main__":
     # run the main execution
     main()
+    
     # close sim app
     simulation_app.close()

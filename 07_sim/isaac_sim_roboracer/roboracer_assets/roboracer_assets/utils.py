@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import torch
 
 class Data:
     def __init__(self, *keys):
@@ -22,8 +23,30 @@ class Data:
             # print(key)
             getattr(self, key).pop(index)
     
-    def unpack(self):
-        pass
+    def unpack_and_save(self, num_robots):
+
+        def to_numpy(x):
+            return x.cpu().numpy() if torch.is_tensor(x) else x
+        
+        unpacked = {}
+        keys = self.get_keys()
+
+        for key in keys:
+            if key not in ('joint_velocity', 'root_acceleration'):
+                unpacked[key] = []
+
+        for robot_id in range(num_robots):
+            for key in keys:
+                data = getattr(self, key)
+
+                if key == 'joint_velocity':
+                    pass
+                elif key == 'root_acceleration':
+                    pass
+                else:
+                    unpacked[key].append(to_numpy(data))
+
+        print(unpacked)
 
     def save(self, *keys, save_dir=''):
         for key in keys:
