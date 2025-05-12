@@ -38,8 +38,9 @@ MIN_VEL, MAX_VEL = 2.0, 10.0
 MIN_STEER, MAX_STEER = -0.8, 0.8 # radians 
 # MIN_STEER, MAX_STEER = 0.0, 0.0 # radians 
 # GROUND_PLANE_ANGLE = -20.0 # degrees
-GROUND_PLANE_ANGLE = -20.0 # degrees
+GROUND_PLANE_ANGLE = 0.0 # degrees
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
+MAX_COUNT = 5000
 
 def get_gravity_vec(angle_in_deg, g_original):
     """
@@ -95,6 +96,9 @@ def generate_target_velocity(min_vel, max_vel, num_envs, num_joints):
     """
     Generate a random target velocity for each robot within the given range.
     """
+    #TODO: Check the units of joint velocity (rad/s or ded/s) and wheel radius and
+    # coonvert the target velocity to appropriate dc motor rpms
+
     # Compute the normal distribution params
     mean = (max_vel + min_vel) / 2
     std = (max_vel - min_vel) / 6
@@ -189,7 +193,7 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     # Simulation loop
     while simulation_app.is_running():
         # Reset    
-        if count % 2500 == 0:
+        if count % MAX_COUNT == 0:
             # reset counter
             count = 0
 
@@ -258,14 +262,31 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         data.root_acceleration.append(robot.data.body_lin_acc_w)
         
         # TODO: REMOVE THIS IN FINAL VERSION /  REPLACE WITH MAX COUNTER
-        if (count == 2):
+        if (count == MAX_COUNT):
             break
 
     # save the data
+    # print(f'root_pose:\n {data.root_pose}')
+
     save_dir = SAVE_DIR
     filename = 'data_record'
     data.unpack_and_save(num_robots = args_cli.num_envs, save_dir=save_dir, filename=filename)
     
+    # TODO: Visualise the data
+    # 1. data validation and visulization
+    # 2. script to segregate the data into inputs and outputs
+    # 3. inputs: current state, control input
+    # 4. output: next state
+    # 5. datatset --> ??
+    # 6. training process --> 
+    #       a) PySINDy for comparision with out approach 
+    #       b) training with MLP to get two libraries --> First priority
+    #       c) online weighting method (to assign wieghts between two libraries)
+    #       d) use the data from car to test: wieghting method
+    # 7. Proposal: Non planar MPC focused on 
+
+
+
 def main():
     """
     Main function.

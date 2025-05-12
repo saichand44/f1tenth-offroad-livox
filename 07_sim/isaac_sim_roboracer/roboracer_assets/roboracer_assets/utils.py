@@ -63,21 +63,24 @@ class Data:
 
         for robot_id in range(num_robots):
             for data_idx in range(data_length):
-                for key in keys:
-                    # add the robot id
-                    unpacked['robot_id'].append(robot_id)
-                    unpacked['timestamps'].append(to_numpy(getattr(self, 'timestamps')[data_idx]))
+                # add the robot id
+                unpacked['robot_id'].append(robot_id)
+                unpacked['timestamps'].append(to_numpy(getattr(self, 'timestamps')[data_idx]))
 
-                    unpacked['ground_plane_inclination'].append(to_numpy(getattr(self, 'ground_plane_inclination')))
-                    unpacked['g_original'].append(to_numpy(getattr(self, 'g_original')))
-                    unpacked['g_transform'].append(to_numpy(getattr(self, 'g_transform')))
-                    unpacked['g_R_p'].append(to_numpy(getattr(self, 'g_R_p')))
-                    unpacked['target_velocity'].append(to_numpy(getattr(self, 'target_velocity')[0][robot_id]))
-                    unpacked['target_steering'].append(to_numpy(getattr(self, 'target_steering')[0][robot_id]))
+                unpacked['ground_plane_inclination'].append(to_numpy(getattr(self, 'ground_plane_inclination')))
+                unpacked['g_original'].append(to_numpy(getattr(self, 'g_original')))
+                unpacked['g_transform'].append(to_numpy(getattr(self, 'g_transform')))
+                unpacked['g_R_p'].append(to_numpy(getattr(self, 'g_R_p')))
+                unpacked['target_velocity'].append(to_numpy(getattr(self, 'target_velocity')[0][robot_id]))
+                unpacked['target_steering'].append(to_numpy(getattr(self, 'target_steering')[0][robot_id]))
+
+                for key in keys:
 
                     if key == 'joint_velocity':
                         # append the joint velocity with joint names
                         joint_vel_all_data = getattr(self, key)[data_idx][robot_id]
+                        # print(f"joint_vel_all_data: \n {joint_vel_all_data}")
+
                         for idx, joint_name in enumerate(joint_names):
                             unpacked[f'{key}_{joint_name}'].append(to_numpy(joint_vel_all_data[idx]))
 
@@ -95,7 +98,6 @@ class Data:
                         continue
 
         # print(f"unpacked keys: \n {unpacked.keys()}")
-        # print(f"unpacked: \n {unpacked}")
 
         # save the data
         np.savez(os.path.join(save_dir, filename), **unpacked)
