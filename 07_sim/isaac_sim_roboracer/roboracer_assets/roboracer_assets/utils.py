@@ -23,30 +23,82 @@ class Data:
             # print(key)
             getattr(self, key).pop(index)
     
-    def unpack_and_save(self, num_robots):
+    def unpack_and_save(self, num_robots, save_dir, filename):
 
         def to_numpy(x):
-            return x.cpu().numpy() if torch.is_tensor(x) else x
-        
+            if torch.is_tensor(x):
+                return x.detach().cpu().numpy()
+
+            if isinstance(x, np.ndarray):
+                return x
+            
+            return x
+    
         unpacked = {}
         keys = self.get_keys()
 
-        for key in keys:
-            if key not in ('joint_velocity', 'root_acceleration'):
-                unpacked[key] = []
+        # get the length of the data
+        if 'timestamps' not in keys:
+            raise KeyError("Missing 'timestamps' key; cannot determine data length.")
+        data_length = len(getattr(self, 'timestamps'))
+
+        unpacked['robot_id'] = []
+        unpacked['timestamps'] = []
+        unpacked['ground_plane_inclination'] = []
+        unpacked['g_original'] = []
+        unpacked['g_transform'] = []
+        unpacked['g_R_p'] = []
+        unpacked['target_velocity'] = []
+        unpacked['target_steering'] = []
+        unpacked['root_pose'] = []
+        unpacked['root_velocity'] = []
+
+        joint_names = getattr(self, 'joint_names')[0]
+        for joint_name in joint_names:
+            unpacked[f'joint_velocity_{joint_name}'] = []
+
+        body_names = getattr(self, 'body_names')[0]
+        for body_name in body_names:
+            unpacked[f'root_acceleration_{body_name}'] = []
 
         for robot_id in range(num_robots):
-            for key in keys:
-                data = getattr(self, key)
+            for data_idx in range(data_length):
+                for key in keys:
+                    # add the robot id
+                    unpacked['robot_id'].append(robot_id)
+                    unpacked['timestamps'].append(to_numpy(getattr(self, 'timestamps')[data_idx]))
 
-                if key == 'joint_velocity':
-                    pass
-                elif key == 'root_acceleration':
-                    pass
-                else:
-                    unpacked[key].append(to_numpy(data))
+                    unpacked['ground_plane_inclination'].append(to_numpy(getattr(self, 'ground_plane_inclination')))
+                    unpacked['g_original'].append(to_numpy(getattr(self, 'g_original')))
+                    unpacked['g_transform'].append(to_numpy(getattr(self, 'g_transform')))
+                    unpacked['g_R_p'].append(to_numpy(getattr(self, 'g_R_p')))
+                    unpacked['target_velocity'].append(to_numpy(getattr(self, 'target_velocity')[0][robot_id]))
+                    unpacked['target_steering'].append(to_numpy(getattr(self, 'target_steering')[0][robot_id]))
 
-        print(unpacked)
+                    if key == 'joint_velocity':
+                        # append the joint velocity with joint names
+                        joint_vel_all_data = getattr(self, key)[data_idx][robot_id]
+                        for idx, joint_name in enumerate(joint_names):
+                            unpacked[f'{key}_{joint_name}'].append(to_numpy(joint_vel_all_data[idx]))
+
+                    elif key == 'root_acceleration':
+                        # append the root acceleration with body names
+                        root_acc_all_data = getattr(self, key)[data_idx][robot_id]
+                        for idx, body_name in enumerate(body_names):
+                            unpacked[f'{key}_{body_name}'].append(to_numpy(root_acc_all_data[idx]))
+
+                    elif key in ['root_pose', 'root_velocity']:
+                        data = getattr(self, key)[data_idx][robot_id]
+                        unpacked[key].append(to_numpy(data))
+
+                    else:
+                        continue
+
+        # print(f"unpacked keys: \n {unpacked.keys()}")
+        # print(f"unpacked: \n {unpacked}")
+
+        # save the data
+        np.savez(os.path.join(save_dir, filename), **unpacked)
 
     def save(self, *keys, save_dir=''):
         for key in keys:

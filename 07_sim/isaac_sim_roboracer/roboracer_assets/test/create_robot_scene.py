@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from isaaclab.app import AppLauncher
 
@@ -38,6 +39,7 @@ MIN_STEER, MAX_STEER = -0.8, 0.8 # radians
 # MIN_STEER, MAX_STEER = 0.0, 0.0 # radians 
 # GROUND_PLANE_ANGLE = -20.0 # degrees
 GROUND_PLANE_ANGLE = -20.0 # degrees
+SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_gravity_vec(angle_in_deg, g_original):
     """
@@ -157,18 +159,24 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
     # initialize the data to record
     data = Data('timestamps',   # simulation timestamp
+                
+                # related to the environment and robot
                 'ground_plane_inclination', # gound plane inclination in deg
                 'g_original',   # gravity vector in ground inertial frame   
                 'g_transform',  # gravity vector in incline inertial frame
                 'g_R_p',    # rotation matrix from ground inertial to incline inertial
+                'joint_names',  # joint names of implicit actuators
+                'body_names',  # body names of articulations
+
+                # related to the robots
                 'target_velocity',    # target velocity to vehicle TODO: current input is rpm, need to change to car speed
                 'target_steering',    # targte steering input to vehicle
+
+                # related to robots and timestamps
                 'root_pose',    # pose of the vehicle (position and quaternion orientation in (w, x, y, z))
                 'root_velocity',    # pose of the vehicle (linear velocity (x, y, z) and angular velocity (x, y, z))
                 'joint_velocity',   # joint velocities of implicit actuators
                 'root_acceleration',    # linear acc of the vehicle (x, y, z)
-                'joint_names',  # joint names of implicit actuators
-                'body_names',  # body names of articulations
                 )
 
     data.ground_plane_inclination.append(GROUND_PLANE_ANGLE)
@@ -240,17 +248,23 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         data.root_velocity.append(scene.get_state()['articulation']['robot']['root_velocity'])
         data.joint_velocity.append(scene.get_state()['articulation']['robot']['joint_velocity'])
 
-        # print(f"robot.joint_names: \n {robot.joint_names}")  # NOTE: Use this to find out what joint pos, vel is reported by scene.get_state() 
+        # print(f"robot.joint_names: \n {robot.joint_names}")
         # print(f"robot.body_names: \n{robot.data.body_names}")
         # print(f"robot.body_lin_acc_w: \n{robot.data.body_lin_acc_w}")
         # print(f"sim.current_time: \n {sim.current_time}")
         
+        # data.timestamps.append(sim.current_time)
         data.timestamps.append(sim.current_time)
         data.root_acceleration.append(robot.data.body_lin_acc_w)
-        break
+        
+        # TODO: REMOVE THIS IN FINAL VERSION /  REPLACE WITH MAX COUNTER
+        if (count == 2):
+            break
 
     # save the data
-    data.unpack_and_save(num_robots = args_cli.num_envs)
+    save_dir = SAVE_DIR
+    filename = 'data_record'
+    data.unpack_and_save(num_robots = args_cli.num_envs, save_dir=save_dir, filename=filename)
     
 def main():
     """
