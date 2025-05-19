@@ -33,14 +33,15 @@ from roboracer_assets.mushr import MUSHR_CFG
 from roboracer_assets.utils import Data
 
 # Nominal, min. max velocities and steering for each robot
-MIN_VEL, MAX_VEL = 2.0, 10.0 
+MIN_VEL, MAX_VEL = 0.0, 5.0 
 # MIN_VEL, MAX_VEL = 0.0, 0.0 
 MIN_STEER, MAX_STEER = -0.8, 0.8 # radians 
 # MIN_STEER, MAX_STEER = 0.0, 0.0 # radians 
-# GROUND_PLANE_ANGLE = -20.0 # degrees
-GROUND_PLANE_ANGLE = 0.0 # degrees
+GROUND_PLANE_ANGLE = -20.0 # degrees
+# GROUND_PLANE_ANGLE = 0.0 # degrees
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
 MAX_COUNT = 5000
+WHEEL_DIAMETER = 0.1 # in meters
 
 def get_gravity_vec(angle_in_deg, g_original):
     """
@@ -215,16 +216,22 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             # control inputs
             # 1) Throttle: spin all throttle joints at full forward
             target_velocity = generate_target_velocity(MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids))
+            target_rpms = target_velocity / (WHEEL_DIAMETER*0.5)     # w = v / r
+
             target_velocity = target_velocity.to(sim.device)
+            target_rpms = target_rpms.to(sim.device)
             # print(f"target_velocity:\n{target_velocity}")
             data.target_velocity.append(target_velocity)
-            robot.set_joint_velocity_target(target_velocity, joint_ids=throttle_ids)
+
+            robot.set_joint_velocity_target(target_rpms, joint_ids=throttle_ids)
 
             # 2) Steering: Apply steering
             target_steering = generate_target_steering(MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids))
+
             target_steering = target_steering.to(sim.device)
             # print(f"target_steering:\n{target_steering}")
             data.target_steering.append(target_steering)
+
             robot.set_joint_position_target(target_steering, joint_ids=steer_ids)
             
             # clear internal buffers
