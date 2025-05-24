@@ -56,7 +56,7 @@ def compute_delx(states, timestamps):
             del_x[idx_offset + i, 7:11] = Rotation.from_rotvec(states[mask, 4:7][i] * dt).as_quat(canonical=False, scalar_first=True)
 
             # acceleration
-            del_x[i, 11:14] = (states[mask, 11:14][i + 1] - states[mask, 11:14][i]) / dt
+            del_x[idx_offset + i, 11:14] = (states[mask, 11:14][i + 1] - states[mask, 11:14][i]) / dt
         
         idx_offset += curr_robot.shape[0]
 
