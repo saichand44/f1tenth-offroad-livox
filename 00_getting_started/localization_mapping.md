@@ -30,7 +30,7 @@ source /opt/ros/<distro>/setup.bash
 source ~/livox_ros2_ws/install/setup.bash
 ```
 
-Replace `<distro>` with your ROS2 distribution name (`humble`, `iron`, etc.).
+Replace `<distro>` with your ROS2 distribution name.
 
 ---
 
