@@ -121,4 +121,4 @@ ros2 service call /map_save std_srvs/srv/Trigger {}
 
 ---
 
-_This README is maintained by the RoboRacer development team for internal and academic use. Adapt as needed for your own robot stack._
+
