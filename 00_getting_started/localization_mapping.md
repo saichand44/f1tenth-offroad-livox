@@ -48,25 +48,19 @@ ros2 launch fitenth_stack bringup_launch.py
 
 ### Step 2: Launch Livox Driver
 
-In a terminal sourced with `livox_ros2_ws`, choose one of the following:
-
-**Option 1: RViz Visualization (no timestamp)**
-
-```bash
-ros2 launch livox_ros_driver2 rviz_MID360_launch.py
-```
-
-**Option 2: PointCloud2 Messages (no timestamp, no RViz)**
+In a terminal sourced with `livox_ros2_ws`:
 
 ```bash
 ros2 launch livox_ros_driver2 msg_MID360_launch_PointCloud2Msg.py
 ```
 
-**Option 3: Custom Messages with Timestamp (no RViz)**
+**If you want RViz Visualization**
 
 ```bash
-ros2 launch livox_ros_driver2 msg_MID360_launch_CustomMsg.py
+ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
+
+
 
 ### Step 3: Launch Localization Pipeline
 
@@ -90,6 +84,13 @@ ros2 launch pure_pursuit pure_pursuit_launch.py
 
 This mode builds a map using Fast-LIO and the Livox MID360 sensor. It requires both workspaces to be sourced in the same terminal.
 ### Step 0: Launch Platform Bringup and Launch livox driver with Timestamp
+
+**Including timestamp with Lidar Data to avoid distortion (this is helpful for mapping but not required for localization)**
+
+```bash
+ros2 launch livox_ros_driver2 msg_MID360_launch_CustomMsg.py
+```
+
 
 
 ### Step 1: Launch Fast-LIO Mapping
@@ -116,50 +117,7 @@ ros2 service call /map_save std_srvs/srv/Trigger {}
 
 ---
 
-## Usage Notes
 
-- **Localization Mode**: Run different steps in separate terminals with the correct workspace sourced.
-- **Mapping Mode**: Run all steps from a terminal where both `ros2_ws` and `livox_ros2_ws` are sourced.
-- **Livox Launch Modes**:
-  - Use `rviz_MID360_launch.py` for live visualization in RViz.
-  - Use `msg_MID360_launch_PointCloud2Msg.py` or `msg_MID360_launch_CustomMsg.py` for minimal systems or headless operation.
-
----
-
-## 🧰 Troubleshooting
-
-- ✅ Ensure both workspaces are successfully built using `colcon build`.
-- ✅ Use `lsusb` or `dmesg` to verify that the Livox MID360 is connected and active.
-- ✅ Double-check your sourcing: run `echo $ROS_PACKAGE_PATH` to confirm.
-- ✅ Make sure all dependencies are installed:
-  - `livox_ros_driver2`
-  - `fast_lio`
-  - `pcl_localization_ros2`
-  - `pure_pursuit`
-  - `fitenth_stack`
-
----
-
-## 📁 Directory Structure (Example)
-
-```
-~/ros2_ws/
-├── src/
-│   └── pcl_localization_ros2/
-│   └── pure_pursuit/
-│   └── fitenth_stack/
-
-~/livox_ros2_ws/
-├── src/
-│   └── livox_ros_driver2/
-│   └── fast_lio/
-```
-
----
-
-## 📬 Contact & Contributions
-
-Feel free to open an issue or pull request if you run into any problems or want to contribute improvements. This setup was designed with robustness and modularity in mind for real-world autonomous offroad navigation.
 
 ---
 
