@@ -22,6 +22,7 @@ simulation_app = app_launcher.app
 import torch
 import numpy as np
 from scipy.spatial.transform import Rotation
+import matplotlib.pyplot as plt
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
@@ -40,7 +41,7 @@ MIN_STEER, MAX_STEER = -0.8, 0.8 # radians
 GROUND_PLANE_ANGLE = -20.0 # degrees
 # GROUND_PLANE_ANGLE = 0.0 # degrees
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
-MAX_COUNT = 5000
+MAX_COUNT = 500
 WHEEL_DIAMETER = 0.1 # in meters
 
 def get_gravity_vec(angle_in_deg, g_original):
@@ -191,109 +192,131 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     data.body_names.append(robot.data.body_names)
     data.joint_names.append(robot.joint_names)
 
+    # --- Initialize current velocity and steering angle at first reset ---
+    current_velocity = None
+    current_steering = None
+    desired_accelerations = []
+    desired_steering_velocities = []
+
     # Simulation loop
     while simulation_app.is_running():
         # Reset    
         if count % MAX_COUNT == 0:
-            # reset counter
             count = 0
 
             # robot
-            # -- root state --> pos, quat, lin vel, ang vel
             root_state = robot.data.default_root_state.clone()
-        
             root_state[:, :3] += scene.env_origins
 
             random_orientations = initial_robot_orientation(scene.num_envs)
             random_orientations = random_orientations.to(sim.device)
             root_state[:, 3:7] = random_orientations
-            # print(f"random_orientations:\n {random_orientations}")
-            
-            # assign default pose and velocities to the robot
+
             robot.write_root_pose_to_sim(root_state[:, :7])
             robot.write_root_velocity_to_sim(root_state[:, 7:])
 
-            # control inputs
-            # 1) Throttle: spin all throttle joints at full forward
-            target_velocity = generate_target_velocity(MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids))
-            target_rpms = target_velocity / (WHEEL_DIAMETER*0.5)     # w = v / r
-
-            target_velocity = target_velocity.to(sim.device)
-            target_rpms = target_rpms.to(sim.device)
-            # print(f"target_velocity:\n{target_velocity}")
-            data.target_velocity.append(target_velocity)
-
-            robot.set_joint_velocity_target(target_rpms, joint_ids=throttle_ids)
-
-            # 2) Steering: Apply steering
-            target_steering = generate_target_steering(MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids))
-
-            target_steering = target_steering.to(sim.device)
-            # print(f"target_steering:\n{target_steering}")
-            data.target_steering.append(target_steering)
-
-            robot.set_joint_position_target(target_steering, joint_ids=steer_ids)
-            
+            # Initialize current velocity and steering angle using the functions
+            current_velocity = generate_target_velocity(
+                MIN_VEL, MAX_VEL, scene.num_envs, len(throttle_ids)
+            )
+            current_steering = generate_target_steering(
+                MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids)
+            )
+            desired_acceleration = torch.empty_like(current_velocity).uniform_(-1.0, 1.0)  # m/s^2
+            desired_steer_vel   = torch.empty_like(current_steering).uniform_(-0.3, 0.3)
             # clear internal buffers
             scene.reset()
             print("[INFO]: Resetting scene state...")
+
+        # --- Randomize desired acceleration and steering velocity (same shape as current) ---
+           # rad/s
+        desired_acceleration = torch.empty_like(current_velocity).uniform_(-1.0, 1.0)  # m/s^2
+        desired_steer_vel = torch.empty_like(current_steering).uniform_(-0.3, 0.3)    # rad/s
+
+        desired_accelerations.append(desired_acceleration.cpu().numpy())
+        desired_steering_velocities.append(desired_steer_vel.cpu().numpy())
+
+
+        # --- Euler integration for velocity and steering angle ---
+        current_velocity = current_velocity + desired_acceleration * sim_dt
+        current_velocity = torch.clamp(current_velocity, MIN_VEL, MAX_VEL)
+
+        current_steering = current_steering + desired_steer_vel * sim_dt
+        current_steering = torch.clamp(current_steering, MIN_STEER, MAX_STEER)
+
+        # --- Use these as control outputs ---
+        target_velocity = current_velocity.to(sim.device)
+        target_rpms = target_velocity / (WHEEL_DIAMETER * 0.5)  # w = v / r
+        print(target_velocity.cpu().numpy().shape)
+        data.target_velocity.append(target_velocity.cpu().numpy())
+        
+        robot.set_joint_velocity_target(target_rpms, joint_ids=throttle_ids)
+
+        target_steering = current_steering.to(sim.device)
+        data.target_steering.append(target_steering.cpu().numpy())
+        robot.set_joint_position_target(target_steering, joint_ids=steer_ids)
 
         # Write data to sim
         scene.write_data_to_sim()
 
         # Perform step
         sim.step()
-
-        # Increment counter
         count += 1
-        
-        # Update buffers
         scene.update(sim_dt)
-
-        # print(f"scene.get_state: \n{scene.get_state()}")
-        # print(f"scene.get_state -- root_pose: \n{scene.get_state()['articulation']['robot']['root_pose']}")
-        # print(f"scene.get_state -- root_velocity: \n{scene.get_state()['articulation']['robot']['root_velocity']}")
-        # print(f"scene.get_state -- joint_velocity: \n{scene.get_state()['articulation']['robot']['joint_velocity']}")
 
         data.root_pose.append(scene.get_state()['articulation']['robot']['root_pose'])
         data.root_velocity.append(scene.get_state()['articulation']['robot']['root_velocity'])
         data.joint_velocity.append(scene.get_state()['articulation']['robot']['joint_velocity'])
-
-        # print(f"robot.joint_names: \n {robot.joint_names}")
-        # print(f"robot.body_names: \n{robot.data.body_names}")
-        # print(f"robot.body_lin_acc_w: \n{robot.data.body_lin_acc_w}")
-        # print(f"sim.current_time: \n {sim.current_time}")
-        
-        # data.timestamps.append(sim.current_time)
         data.timestamps.append(sim.current_time)
         data.root_acceleration.append(robot.data.body_lin_acc_w)
-        
-        # TODO: REMOVE THIS IN FINAL VERSION /  REPLACE WITH MAX COUNTER
+
         if (count == MAX_COUNT):
             break
 
     # save the data
-    # print(f'root_pose:\n {data.root_pose}')
-
     save_dir = SAVE_DIR
-    filename = 'data_record'
+    filename = 'data_record5'
     data.unpack_and_save(num_robots = args_cli.num_envs, save_dir=save_dir, filename=filename)
-    
-    # TODO: Visualise the data
-    # 1. data validation and visulization
-    # 2. script to segregate the data into inputs and outputs
-    # 3. inputs: current state, control input
-    # 4. output: next state
-    # 5. datatset --> ??
-    # 6. training process --> 
-    #       a) PySINDy for comparision with out approach 
-    #       b) training with MLP to get two libraries --> First priority
-    #       c) online weighting method (to assign wieghts between two libraries)
-    #       d) use the data from car to test: wieghting method
-    # 7. Proposal: Non planar MPC focused on 
 
+    # Save raw control data directly (workaround)
+    print("[INFO]: Saving raw control data directly...")
+    np.savez(os.path.join(save_dir, 'raw_control_data2.npz'), 
+             velocity=np.array(data.target_velocity), 
+             steering=np.array(data.target_steering),
+             acceleration=np.array(desired_accelerations),
+             steering_velocity=np.array(desired_steering_velocities),
+             timestamps=np.array(data.timestamps))
+    print(f"[INFO]: Raw control data saved to {os.path.join(save_dir, 'raw_control_data.npz')}")
 
+    # --- Plotting the inputs over time for each robot ---
+    # Convert lists to numpy arrays for plotting
+    target_velocity_arr = np.array(data.target_velocity)  # shape: (timesteps, num_envs, num_joints)
+    target_steering_arr = np.array(data.target_steering)  # shape: (timesteps, num_envs, num_joints)
+    print(f"target_velocity_arr shape: {target_velocity_arr.shape}")
+    print(f"target_steering_arr shape: {target_steering_arr.shape}")
+    timestamps_arr = np.array(data.timestamps)
 
+    # Plot velocity for each robot (first joint)
+    plt.figure(figsize=(12, 5))
+    for env in range(target_velocity_arr.shape[1]):
+        plt.plot(timestamps_arr, target_velocity_arr[:, env, 0], label=f'Robot {env+1}')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Velocity [m/s]')
+    plt.title('Velocity Input Over Time')
+    plt.legend()
+    plt.grid()
+
+    # Plot steering angle for each robot (first joint)
+    plt.figure(figsize=(12, 5))
+    for env in range(target_steering_arr.shape[1]):
+        plt.plot(timestamps_arr, target_steering_arr[:, env, 0], label=f'Robot {env+1}')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Steering Angle [rad]')
+    plt.title('Steering Angle Input Over Time')
+    plt.legend()
+    plt.grid()
+
+    plt.show()
 def main():
     """
     Main function.
@@ -329,3 +352,8 @@ if __name__ == "__main__":
     
     # close sim app
     simulation_app.close()
+
+
+
+
+#./isaaclab.sh -p ~/ros2_ws/src/f1tenth-offroad-livox/07_sim/isaac_sim_roboracer/roboracer_assets/test/create_robot_scene.py --num_envs 5

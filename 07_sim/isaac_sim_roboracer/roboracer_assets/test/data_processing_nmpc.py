@@ -4,6 +4,9 @@ import os
 import sys
 import pandas as pd
 from scipy.spatial.transform import Rotation
+import matplotlib.pyplot as plt
+
+
 
 def load_npz_file(npz_path):
     if not os.path.isfile(npz_path):
@@ -128,3 +131,49 @@ if __name__ == "__main__":
     # ===========================================================================================
     save_path = "processed_data.npz"
     np.savez_compressed(save_path, input=input_vec, output=output_vec)
+
+    robot_id_to_plot = robot_ids[0, 0]
+    mask = (robot_ids[:, 0] == robot_id_to_plot)
+
+    # Actual values
+    actual_pos = root_pose[mask, :3]
+    actual_vel = root_vel[mask, :]
+
+    # Integrated values
+    reconstructed_pos = [actual_pos[0]]
+    reconstructed_vel = [actual_vel[0]]
+
+    for i in range(output_vec[mask].shape[0] - 1):
+        dt = times[mask][i+1] - times[mask][i]
+        # Integrate velocity
+        new_pos = reconstructed_pos[-1] + output_vec[mask][i, 1:4] * dt
+        reconstructed_pos.append(new_pos)
+        # Integrate acceleration for velocity (only first 3 components)
+        new_vel = reconstructed_vel[-1].copy()
+        new_vel[:3] += output_vec[mask][i, 11:14] * dt
+        reconstructed_vel.append(new_vel)
+
+    reconstructed_pos = np.array(reconstructed_pos)
+    reconstructed_vel = np.array(reconstructed_vel)
+
+    # Plot position
+    plt.figure(figsize=(12, 5))
+    for j, label in enumerate(['x', 'y', 'z']):
+        plt.subplot(1, 3, j+1)
+        plt.plot(actual_pos[:, j], label='Actual')
+        plt.plot(reconstructed_pos[:, j], label='Integrated')
+        plt.title(f'Position {label}')
+        plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Plot velocity
+    plt.figure(figsize=(12, 5))
+    for j, label in enumerate(['vx', 'vy', 'vz']):
+        plt.subplot(1, 3, j+1)
+        plt.plot(actual_vel[:, j], label='Actual')
+        plt.plot(reconstructed_vel[:, j], label='Integrated')
+        plt.title(f'Velocity {label}')
+        plt.legend()
+    plt.tight_layout()
+    plt.show()

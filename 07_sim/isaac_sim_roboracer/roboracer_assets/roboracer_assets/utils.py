@@ -71,8 +71,8 @@ class Data:
                 unpacked['g_original'].append(to_numpy(getattr(self, 'g_original')))
                 unpacked['g_transform'].append(to_numpy(getattr(self, 'g_transform')))
                 unpacked['g_R_p'].append(to_numpy(getattr(self, 'g_R_p')))
-                unpacked['target_velocity'].append(to_numpy(getattr(self, 'target_velocity')[0][robot_id]))
-                unpacked['target_steering'].append(to_numpy(getattr(self, 'target_steering')[0][robot_id]))
+                unpacked['target_velocity'].append(to_numpy(getattr(self, 'target_velocity')))
+                unpacked['target_steering'].append(to_numpy(getattr(self, 'target_steering')))
 
                 for key in keys:
 

@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # ===========================================================================================
     # parse the file
     # ===========================================================================================
-    filename = 'data_record.npz'
+    filename = 'data_record1.npz'
     data = load_npz_file(filename)
 
     # # print the data
@@ -164,67 +164,67 @@ if __name__ == "__main__":
     # # ===========================================================================================
     # # data validation
     # # ===========================================================================================
-    # def next_position(pos, vel, acc, dt):
-    #     next_pos = pos + vel * dt + 0.5 * acc * dt**2
-    #     return next_pos
+    def next_position(pos, vel, acc, dt):
+        next_pos = pos + vel * dt + 0.5 * acc * dt**2
+        return next_pos
 
-    # def next_orientation(quat, ang_vel, dt):
-    #     q = Rotation.from_quat(quat, scalar_first=True)
-    #     w_q = Rotation.from_rotvec(ang_vel * dt)
-    #     next_q = q * w_q
-    #     w, x, y, z = next_q.as_quat(canonical=False, scalar_first=True)
-    #     return np.array([w, x, y, z])
+    def next_orientation(quat, ang_vel, dt):
+        q = Rotation.from_quat(quat, scalar_first=True)
+        w_q = Rotation.from_rotvec(ang_vel * dt)
+        next_q = q * w_q
+        w, x, y, z = next_q.as_quat(canonical=False, scalar_first=True)
+        return np.array([w, x, y, z])
     
-    # for robot in selected_robots:
-    #     mask = (robot_ids == robot)
-    #     t_r   = times[mask]             # timestamps for this robot
-    #     p_r   = root_pose[mask, :3]     # positions
-    #     v_r   = root_vel[mask, :3]      # linear velocities
-    #     a_r   = root_acc[mask]          # linear accelerations
-    #     q_r   = root_pose[mask, 3:]     # actual quaternions
-    #     w_r   = root_vel[mask, 3:]      # angular velocities
+    for robot in selected_robots:
+        mask = (robot_ids == robot)
+        t_r   = times[mask]             # timestamps for this robot
+        p_r   = root_pose[mask, :3]     # positions
+        v_r   = root_vel[mask, :3]      # linear velocities
+        a_r   = root_acc[mask]          # linear accelerations
+        q_r   = root_pose[mask, 3:]     # actual quaternions
+        w_r   = root_vel[mask, 3:]      # angular velocities
 
-    #     dt_r = np.diff(t_r) 
-    #     pred_p = np.array([
-    #         next_position(p_r[k], v_r[k], a_r[k], dt_r[k])
-    #         for k in range(len(dt_r))
-    #     ])   
-    #     actual_p = p_r[1:]
+        dt_r = np.diff(t_r) 
+        pred_p = np.array([
+            next_position(p_r[k], v_r[k], a_r[k], dt_r[k])
+            for k in range(len(dt_r))
+        ])   
+        actual_p = p_r[1:]
 
-    #     pred_q = np.array([
-    #         next_orientation(q_r[k], w_r[k], dt_r[k])
-    #         for k in range(len(dt_r))
-    #     ])
-    #     actual_q = q_r[1:]
+        pred_q = np.array([
+            next_orientation(q_r[k], w_r[k], dt_r[k])
+            for k in range(len(dt_r))
+        ])
+        actual_q = q_r[1:]
 
-    #     t_plot = t_r[1:] 
+        t_plot = t_r[1:] 
 
-    #     # --- Position plots (X,Y,Z) ---
-    #     fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-    #     coord_labels = ["X", "Y", "Z"]
-    #     for i, label in enumerate(coord_labels):
-    #         axes[i].plot(t_plot, actual_p[:, i],     label="actual")
-    #         axes[i].plot(t_plot, pred_p[:, i], "--", label="predicted")
-    #         axes[i].set_ylabel(label)
-    #         axes[i].grid(True)
-    #         axes[i].legend(loc="best", fontsize="small")
+        # --- Position plots (X,Y,Z) ---
+        fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+        coord_labels = ["X", "Y", "Z"]
+        for i, label in enumerate(coord_labels):
+            axes[i].plot(t_plot, actual_p[:, i],     label="actual")
+            axes[i].plot(t_plot, pred_p[:, i], "--", label="predicted")
+            axes[i].set_ylabel(label)
+            axes[i].grid(True)
+            axes[i].legend(loc="best", fontsize="small")
 
-    #     axes[-1].set_xlabel("Time")
-    #     fig.suptitle(f"Robot {robot}: Actual vs Predicted Position")
-    #     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-    #     plt.show()
+        axes[-1].set_xlabel("Time")
+        fig.suptitle(f"Robot {robot}: Actual vs Predicted Position")
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show()
 
-    #     # --- Orientation plots (w,x,y,z) ---
-    #     fig_q, axes_q = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
-    #     for i, label in enumerate(["w","x","y","z"]):
-    #         axes_q[i].plot(t_plot, actual_q[:, i],     label="actual")
-    #         axes_q[i].plot(t_plot, pred_q[:, i], "--", label="predicted")
-    #         axes_q[i].set_ylabel(label)
-    #         axes_q[i].grid(True)
-    #         axes_q[i].legend(loc="best", fontsize="small")
-    #     axes_q[-1].set_xlabel("Time")
-    #     fig_q.suptitle(f"Robot {robot}: Orientation — Actual vs Predicted")
-    #     fig_q.tight_layout(rect=[0, 0.03, 1, 0.95])
-    #     plt.show()
+        # --- Orientation plots (w,x,y,z) ---
+        fig_q, axes_q = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
+        for i, label in enumerate(["w","x","y","z"]):
+            axes_q[i].plot(t_plot, actual_q[:, i],     label="actual")
+            axes_q[i].plot(t_plot, pred_q[:, i], "--", label="predicted")
+            axes_q[i].set_ylabel(label)
+            axes_q[i].grid(True)
+            axes_q[i].legend(loc="best", fontsize="small")
+        axes_q[-1].set_xlabel("Time")
+        fig_q.suptitle(f"Robot {robot}: Orientation — Actual vs Predicted")
+        fig_q.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show()
     
     
