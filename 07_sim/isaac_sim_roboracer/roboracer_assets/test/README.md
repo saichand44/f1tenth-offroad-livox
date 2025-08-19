@@ -30,7 +30,7 @@ The main script `isaac_sim_mppi_integration.py` provides a complete simulation e
 
 ### Basic Run
 ```bash
-python isaac_sim_mppi_integration.py --num_envs 1
+./isaaclab.sh ~ "path to isaac_sim_mppi_integration.py"
 ```
 
 ### With Custom Parameters
