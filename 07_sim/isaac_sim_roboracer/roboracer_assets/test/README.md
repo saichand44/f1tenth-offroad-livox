@@ -4,38 +4,17 @@ This directory contains scripts for integrating Model Predictive Path Integral (
 
 ## Overview
 
-The main script `isaac_sim_mppi_integration.py` provides a complete simulation environment that:
+The script `isaac_sim_mppi_integration.py` provides a complete simulation environment that:
 - Loads a race track from CSV waypoints
 - Implements MPPI-based trajectory planning and control
 - Visualizes waypoints and trajectory in Isaac Sim
 - Collects simulation data for hybrid neural ODE training
 
-## Features
-
-- **MPPI Controller**: Advanced model predictive control for high-speed racing
-- **3D Visualization**: Real-time waypoint markers, trajectory lines, and velocity arrows
-- **Data Collection**: Automatic logging of states, controls, and MPPI outputs
-- **Inclined Surface Support**: Configurable ground plane angle for off-road scenarios
-- **Memory Optimized**: Reduced GPU memory usage for better performance
-
-## Requirements
-
-- Isaac Lab
-- f1tenth_planning package
-- PyTorch
-- NumPy
-- SciPy
-
-## Usage
+The Script `create_robot_scene2.py` runs the data collection process which is used to train the neural ODE:
 
 ### Basic Run
 ```bash
-./isaaclab.sh ~ "path to isaac_sim_mppi_integration.py"
-```
-
-### With Custom Parameters
-```bash
-python isaac_sim_mppi_integration.py --num_envs 1 --device cuda:0
+./isaaclab.sh ~/"path to isaac_sim_mppi_integration.py"
 ```
 
 ## Configuration
