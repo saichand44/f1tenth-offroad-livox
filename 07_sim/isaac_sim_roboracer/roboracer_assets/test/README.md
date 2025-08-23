@@ -4,7 +4,7 @@ This directory contains scripts for integrating Model Predictive Path Integral (
 
 ## Overview
 
-The main script `isaac_sim_mppi_integration.py` provides a complete simulation environment that:
+The script `isaac_sim_mppi_integration.py` provides a complete simulation environment that:
 - Loads a race track from CSV waypoints
 - Implements MPPI-based trajectory planning and control
 - Visualizes waypoints and trajectory in Isaac Sim
