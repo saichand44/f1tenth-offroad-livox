@@ -4,6 +4,11 @@ import os
 import sys
 import json
 
+# Add the current directory to Python path so we can import our modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 from surfaces.off_camber_bank import OffCamberBankedTrack
 from surfaces.on_camber_bank import OnCamberBankedTrack
 from surfaces.single_bump import SingleBumpTrack
@@ -52,6 +57,11 @@ def main():
                 disable_scene_cleanup()
             else:
                 track_instance.create_track()
+    
+    # Save as Blender file first
+    blend_path = "all_tracks.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    print("Saved Blender file to", blend_path)
     
     # Export the entire scene as a single OBJ file.
     export_path = "all_tracks.obj"  # <-- Update to your desired export location.

@@ -11,6 +11,14 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description="Creating a non-planar track scene with vehicle")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
 # parser.add_argument("--headless", action="store_true", help="Run in headless mode to save GPU memory.")
+#add parser for npz file name
+
+
+#add a parser for the slpope angle
+parser.add_argument("--ground_angle", type=float, default=0.0, help="Ground plane angle in degrees.")
+
+parser.add_argument("--data_file", type=str, default="data.npz", help="Path to the npz file.")
+
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -42,7 +50,11 @@ MIN_VEL, MAX_VEL = 0.0, 5.0
 # MIN_VEL, MAX_VEL = 0.0, 0.0 
 MIN_STEER, MAX_STEER = -0.8, 0.8 # radians 
 # MIN_STEER, MAX_STEER = 0.0, 0.0 # radians 
-GROUND_PLANE_ANGLE = -0.0 # degrees
+# GROUND_PLANE_ANGLE = -0.0 # degrees
+GROUND_PLANE_ANGLE = args_cli.ground_angle
+# CODE TO RUN THIS IN THE TERMINAL
+
+
 # GROUND_PLANE_ANGLE = 0.0 # degrees
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
 MAX_COUNT = 500
@@ -243,21 +255,23 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
+    print(f"[INFO]: Simulation time step: {sim_dt} seconds")
     count = 0
-
-    
 
     # Initialize data collection lists
     timestamps = []
     states_data = []
     inputs_data = []
-    
+
     # Store previous yaw angles for yaw rate computation
     prev_yaw = None
 
     # --- Initialize current velocity and steering angle at first reset ---
     current_velocity = None
     current_steering = None
+
+    # Track elapsed time for data collection
+    elapsed_time = 0.0
 
     # Simulation loop
     while simulation_app.is_running():
@@ -283,10 +297,10 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
             current_steering = generate_target_steering(
                 MIN_STEER, MAX_STEER, scene.num_envs, len(steer_ids)
             )
-            
+
             # Reset previous yaw
             prev_yaw = None
-            
+
             # clear internal buffers
             scene.reset()
             print("[INFO]: Resetting scene state...")
@@ -318,50 +332,58 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
         count += 1
         scene.update(sim_dt)
 
-        # --- Data Collection for Hybrid Neural ODE ---
-        # Get current robot state in the world frame (flat ground frame)
-        root_pos = robot.data.root_pos_w  # (num_envs, 3) - position in world frame
-        root_quat = robot.data.root_quat_w  # (num_envs, 4) - quaternion orientation (w, x, y, z)
-        root_lin_vel = robot.data.root_lin_vel_w  # (num_envs, 3) - linear velocity in world frame
-        root_ang_vel = robot.data.root_ang_vel_w  # (num_envs, 3) - angular velocity in world frame
-        root_lin_acc = robot.data.body_lin_acc_w  # (num_envs, 3) - linear acceleration in world frame
-        
-        # Extract yaw angles directly from world frame quaternions
-        yaw_angles = torch.atan2(
-            2 * (root_quat[:, 0] * root_quat[:, 3] + root_quat[:, 1] * root_quat[:, 2]),
-            1 - 2 * (root_quat[:, 2]**2 + root_quat[:, 3]**2)
-        )
+        # Accumulate elapsed time
+        elapsed_time += sim_dt
 
-        # Compute yaw rate
-        if prev_yaw is not None:
-            delta_yaw = yaw_angles - prev_yaw
-          
-            delta_yaw = torch.atan2(torch.sin(delta_yaw), torch.cos(delta_yaw))
-            yaw_rate = delta_yaw / sim_dt
-        else:
-            yaw_rate = torch.zeros_like(yaw_angles)
+        # Collect data every 0.05 seconds
+        if elapsed_time >= 0.05:
+            # --- Data Collection for Hybrid Neural ODE ---
+            # Get current robot state in the world frame (flat ground frame)
+            root_pos = robot.data.root_pos_w  # (num_envs, 3) - position in world frame
+            root_quat = robot.data.root_quat_w  # (num_envs, 4) - quaternion orientation (w, x, y, z)
+            root_lin_vel = robot.data.root_lin_vel_w  # (num_envs, 3) - linear velocity in world frame
+            root_ang_vel = robot.data.root_ang_vel_w  # (num_envs, 3) - angular velocity in world frame
+            root_lin_acc = robot.data.body_lin_acc_w  # (num_envs, 3) - linear acceleration in world frame
 
-        # Compute state variables in the flat ground frame
-        states = compute_state_variables(
-            root_pos, root_lin_vel, yaw_angles, target_steering[:, 0], root_lin_acc, None
-        )
+            # Extract yaw angles directly from world frame quaternions
+            yaw_angles = torch.atan2(
+                2 * (root_quat[:, 0] * root_quat[:, 3] + root_quat[:, 1] * root_quat[:, 2]),
+                1 - 2 * (root_quat[:, 2]**2 + root_quat[:, 3]**2)
+            )
 
-        # Update yaw rate in states
-        states[:, 6] = yaw_rate
-        
-        # Prepare control inputs
-        inputs = torch.stack([
-            desired_acceleration[:, 0],  # longitudinal acceleration
-            desired_steer_vel[:, 0]      # steering rate
-        ], dim=1)
-        
-        # Store data
-        timestamps.append(sim.current_time)
-        states_data.append(states.cpu().numpy())
-        inputs_data.append(inputs.cpu().numpy())
-        
-        # Update previous yaw
-        prev_yaw = yaw_angles.clone()
+            # Compute yaw rate
+            if prev_yaw is not None:
+                delta_yaw = yaw_angles - prev_yaw
+
+                delta_yaw = torch.atan2(torch.sin(delta_yaw), torch.cos(delta_yaw))
+                yaw_rate = delta_yaw / elapsed_time
+            else:
+                yaw_rate = torch.zeros_like(yaw_angles)
+
+            # Compute state variables in the flat ground frame
+            states = compute_state_variables(
+                root_pos, root_lin_vel, yaw_angles, target_steering[:, 0], root_lin_acc, None
+            )
+
+            # Update yaw rate in states
+            states[:, 6] = yaw_rate
+
+            # Prepare control inputs
+            inputs = torch.stack([
+                desired_acceleration[:, 0],  # longitudinal acceleration
+                desired_steer_vel[:, 0]      # steering rate
+            ], dim=1)
+
+            # Store data
+            timestamps.append(sim.current_time)
+            states_data.append(states.cpu().numpy())
+            inputs_data.append(inputs.cpu().numpy())
+
+            # Update previous yaw
+            prev_yaw = yaw_angles.clone()
+
+            # Reset elapsed time
+            elapsed_time = 0.0
 
         if (count == MAX_COUNT):
             break
@@ -372,7 +394,8 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     inputs_arr = np.array(inputs_data)  # (timesteps, num_envs, 2)
 
     save_dir = SAVE_DIR
-    filename = "hybrid_neural_ode_data_flat12"
+    # filename = "hybrid_neural_ode_data_flat20"
+    filename = args_cli.data_file
 
     # Save data in .npz format
     np.savez(os.path.join(save_dir, f'{filename}.npz'),
