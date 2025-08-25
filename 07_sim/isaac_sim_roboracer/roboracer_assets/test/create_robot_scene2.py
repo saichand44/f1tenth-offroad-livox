@@ -57,7 +57,7 @@ GROUND_PLANE_ANGLE = args_cli.ground_angle
 
 # GROUND_PLANE_ANGLE = 0.0 # degrees
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
-MAX_COUNT = 500
+MAX_COUNT = 5000
 WHEEL_DIAMETER = 0.1 # in meters
 
 def get_gravity_vec(angle_in_deg, g_original):

@@ -28,7 +28,7 @@ def main():
     clear_scene()
     
     # Load the track parameters JSON file.
-    with open("./track_config/track2.json", "r") as f:
+    with open("./track_config/track1.json", "r") as f:
         params = json.load(f)
     
     # Lookup dictionary mapping JSON keys to track classes.
@@ -58,10 +58,10 @@ def main():
             else:
                 track_instance.create_track()
     
-    # Save as Blender file first
-    blend_path = "all_tracks.blend"
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
-    print("Saved Blender file to", blend_path)
+    # # Save as Blender file first
+    # blend_path = "all_tracks.blend"
+    # bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    # print("Saved Blender file to", blend_path)
     
     # Export the entire scene as a single OBJ file.
     export_path = "all_tracks.obj"  # <-- Update to your desired export location.
